@@ -29,6 +29,7 @@ public class EstimoteActivity extends AppCompatActivity {
 
     private BeaconManager beaconManager;
     private Region region;
+    private String apiToken = getResources().getString(R.string.mySlackKey);
 
     String currentChannel = "";
 
@@ -64,12 +65,14 @@ public class EstimoteActivity extends AppCompatActivity {
                     if (!channel.equals(currentChannel)) {
                         Log.d("EstimoteActivity", "Joining channel:" + channel);
                         Toast.makeText(EstimoteActivity.this, "Joining channel:" + channel, Toast.LENGTH_SHORT).show();
+                        makeHttpRequest("join", apiToken, currentChannel);
                         currentChannel = channel;
                     }
 
                 } else {
                     Log.d("EstimoteActivity", "Leaving channels");
                     Toast.makeText(EstimoteActivity.this, "Leaving channels", Toast.LENGTH_SHORT).show();
+                    makeHttpRequest("leave", apiToken, currentChannel);
                     currentChannel = "";
                 }
             }
@@ -98,26 +101,25 @@ public class EstimoteActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    private void makeHttpRequest() {
-        String API_PREFIX = "https://slack.com/api/channels.join?token=xoxp-2454420967-2454420975-27787677779-76338d465a&name=kitchen&pretty=1";
+    private void makeHttpRequest(String operation, String token, String channelName) {
+
+        String requestUrl = "https://slack.com/api/channels." + operation + "?token=" + token + "&name=" + channelName + "&pretty=1";
+
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://www.google.com";
 
         // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        Log.d("EstimoteActivity", "Response" + response);
-                    }
-                }, new Response.ErrorListener() {
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.d("EstimoteActivity", "Response" + response);
+            }
+        }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.d("EstimoteActivity", "Error" + error);
             }
         });
-// Add the request to the RequestQueue.
+        // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
 }
