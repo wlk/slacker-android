@@ -5,6 +5,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
@@ -19,9 +25,7 @@ import java.util.UUID;
 
 public class EstimoteActivity extends AppCompatActivity {
 
-    private static final Map<String, String> PLACES_BY_BEACONS;
-
-    private static final String[] channels = new String[]{"kitchen", "at-desk", "meeting-room"};
+    private static final Map<String, String> CHANNELS_BY_BEACONS;
 
     private BeaconManager beaconManager;
     private Region region;
@@ -30,16 +34,16 @@ public class EstimoteActivity extends AppCompatActivity {
 
     static {
         Map<String, String> placesByBeacons = new HashMap<>();
-        placesByBeacons.put("4300:64947", channels[0]); //blueberry - kitchen
-        placesByBeacons.put("21333:11327", channels[1]); //ice - at desk
-        placesByBeacons.put("20478:33460", channels[2]); //mint - meeting-room
-        PLACES_BY_BEACONS = Collections.unmodifiableMap(placesByBeacons);
+        placesByBeacons.put("4300:64947", "kitchen"); //blueberry
+        placesByBeacons.put("21333:11327", "at-desk"); //ice
+        placesByBeacons.put("20478:33460", "meeting-room"); //mint
+        CHANNELS_BY_BEACONS = Collections.unmodifiableMap(placesByBeacons);
     }
 
     private String channelToJoin(Beacon beacon) {
         String beaconKey = String.format(Locale.US, "%d:%d", beacon.getMajor(), beacon.getMinor());
-        if (PLACES_BY_BEACONS.containsKey(beaconKey)) {
-            return PLACES_BY_BEACONS.get(beaconKey);
+        if (CHANNELS_BY_BEACONS.containsKey(beaconKey)) {
+            return CHANNELS_BY_BEACONS.get(beaconKey);
         }
         return "";
     }
@@ -92,5 +96,28 @@ public class EstimoteActivity extends AppCompatActivity {
         beaconManager.stopRanging(region);
 
         super.onPause();
+    }
+
+    private void makeHttpRequest() {
+        String API_PREFIX = "https://slack.com/api/channels.join?token=xoxp-2454420967-2454420975-27787677779-76338d465a&name=kitchen&pretty=1";
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url ="http://www.google.com";
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        Log.d("EstimoteActivity", "Response" + response);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("EstimoteActivity", "Error" + error);
+            }
+        });
+// Add the request to the RequestQueue.
+        queue.add(stringRequest);
     }
 }
