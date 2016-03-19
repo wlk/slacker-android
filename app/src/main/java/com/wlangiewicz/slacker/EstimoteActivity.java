@@ -26,12 +26,7 @@ import java.util.UUID;
 public class EstimoteActivity extends AppCompatActivity {
 
     private static final Map<String, String> CHANNELS_BY_BEACONS;
-
-    private BeaconManager beaconManager;
-    private Region region;
-    private String apiToken = getResources().getString(R.string.mySlackKey);
-
-    String currentChannel = "";
+    private static final Map<String, String> CHANNEL_MAPPING;
 
     static {
         Map<String, String> placesByBeacons = new HashMap<>();
@@ -40,6 +35,19 @@ public class EstimoteActivity extends AppCompatActivity {
         placesByBeacons.put("20478:33460", "meeting-room"); //mint
         CHANNELS_BY_BEACONS = Collections.unmodifiableMap(placesByBeacons);
     }
+
+    static {
+        Map<String, String> channelMapping = new HashMap<>();
+        channelMapping.put("at-desk", "C0TULBRPA");
+        channelMapping.put("kitchen", "C0TU94G8N");
+        channelMapping.put("meeting-room", "C0TT0LS4B");
+        CHANNEL_MAPPING = Collections.unmodifiableMap(channelMapping);
+    }
+
+    String currentChannel = "";
+    private BeaconManager beaconManager;
+    private Region region;
+    private String apiToken = "";
 
     private String channelToJoin(Beacon beacon) {
         String beaconKey = String.format(Locale.US, "%d:%d", beacon.getMajor(), beacon.getMinor());
@@ -53,6 +61,7 @@ public class EstimoteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        apiToken = getResources().getString(R.string.mySlackKey);
 
         beaconManager = new BeaconManager(this);
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
@@ -65,8 +74,9 @@ public class EstimoteActivity extends AppCompatActivity {
                     if (!channel.equals(currentChannel)) {
                         Log.d("EstimoteActivity", "Joining channel:" + channel);
                         Toast.makeText(EstimoteActivity.this, "Joining channel:" + channel, Toast.LENGTH_SHORT).show();
-                        makeHttpRequest("join", apiToken, currentChannel);
+                        makeHttpRequest("leave", apiToken, currentChannel);
                         currentChannel = channel;
+                        makeHttpRequest("join", apiToken, currentChannel);
                     }
 
                 } else {
@@ -101,25 +111,32 @@ public class EstimoteActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    private void makeHttpRequest(String operation, String token, String channelName) {
+    private void makeHttpRequest(final String operation, String token, final String channelName) {
+        if (!channelName.equals("")) {
 
-        String requestUrl = "https://slack.com/api/channels." + operation + "?token=" + token + "&name=" + channelName + "&pretty=1";
+            final String channelNameMapped = operation.equals("leave") ? CHANNEL_MAPPING.get(channelName) : channelName;
+            final String channelKeyName = operation.equals("leave") ? "channel" : "name";
 
-        RequestQueue queue = Volley.newRequestQueue(this);
+            String requestUrl = "https://slack.com/api/channels." + operation + "?token=" + token + "&" + channelKeyName + "=" + channelNameMapped + "&pretty=1";
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Log.d("EstimoteActivity", "Response" + response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d("EstimoteActivity", "Error" + error);
-            }
-        });
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+            RequestQueue queue = Volley.newRequestQueue(this);
+
+            // Request a string response from the provided URL.
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+
+                    Log.d("EstimoteActivity", "Request, operation:" + operation + ", channel: " + channelNameMapped);
+                    Log.d("EstimoteActivity", "Response " + response);
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.d("EstimoteActivity", "Error " + error);
+                }
+            });
+            // Add the request to the RequestQueue.
+            queue.add(stringRequest);
+        }
     }
 }
