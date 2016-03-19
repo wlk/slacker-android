@@ -67,7 +67,7 @@ public class EstimoteActivity extends AppCompatActivity {
 
                     if (!channel.equals(currentChannel)) {
                         Log.d("EstimoteActivity", "Joining channel:" + channel);
-                        Toast.makeText(EstimoteActivity.this, "Joining channel:" + channel, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EstimoteActivity.this, "Joining channel: " + channel, Toast.LENGTH_LONG).show();
                         slack.leaveChannel(currentChannel);
                         currentChannel = channel;
                         slack.joinChannel(currentChannel);
@@ -79,7 +79,7 @@ public class EstimoteActivity extends AppCompatActivity {
 
                 } else {
                     Log.d("EstimoteActivity", "Leaving channels");
-                    Toast.makeText(EstimoteActivity.this, "Leaving channels", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EstimoteActivity.this, "Leaving all channels", Toast.LENGTH_LONG).show();
                     currentChannel = "";
 
                     leaveALlChannels();
